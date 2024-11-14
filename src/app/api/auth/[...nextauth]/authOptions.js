@@ -7,17 +7,13 @@ export const authOptions = {
       clientId: process.env.GAKUNIN_CLIENT_ID,
       clientSecret: process.env.GAKUNIN_CLIENT_SECRET,
       authorization: {
-        // url: "https://accounts.rdm.nii.ac.jp/oauth2/authorize",
         url: "https://accounts.rdm.nii.ac.jp/oauth2/authorize",
         params: {
-          // client_id: process.env.GAKUNIN_CLIENT_ID, // client_id を追加
-          // client_id: process.env.GAKUNIN_CLIENT_ID, // client_id を明示的に追加
           scope: "osf.full_read osf.full_write",
           response_type: "code",
           redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/callback/gakunin`,
         },
       },
-      // token: "https://accounts.rdm.nii.ac.jp/oauth2/token",
       token: "https://accounts.rdm.nii.ac.jp/oauth2/token",
       userinfo: {
         url: "https://api.rdm.nii.ac.jp/v2/users/me/",
