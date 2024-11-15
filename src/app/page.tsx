@@ -24,8 +24,6 @@ export default function MyData() {
 
   return (
     <div>
-      <button onClick={fetchData}>Get My ORCID Data</button>
-
       {!session ? (
         <button onClick={() => signIn("orcid")}>Sign in</button>
       ) : (
@@ -33,6 +31,13 @@ export default function MyData() {
           <p>Welcome, {session?.user?.name}</p>
           <p>ORCID: {session?.user?.id}</p>
           <p>Access Token: {session?.accessToken}</p>
+
+          <p>
+            <button onClick={fetchData}>
+              Show My ORCID Data in the Console
+            </button>
+          </p>
+
           <button onClick={() => signOut()}>Sign out</button>
         </>
       )}
