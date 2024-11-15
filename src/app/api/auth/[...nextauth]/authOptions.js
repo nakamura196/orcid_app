@@ -1,85 +1,53 @@
 export const authOptions = {
-  // debug: true, // next-auth のデバッグモードを有効化
   providers: [
     {
-      id: "gakunin",
-      name: "GakuNin RDM",
+      id: "orcid",
+      name: "ORCID",
       type: "oauth",
-      clientId: process.env.GAKUNIN_CLIENT_ID,
-      clientSecret: process.env.GAKUNIN_CLIENT_SECRET,
+      clientId: process.env.ORCID_CLIENT_ID,
+      clientSecret: process.env.ORCID_CLIENT_SECRET,
       authorization: {
-        url: "https://accounts.rdm.nii.ac.jp/oauth2/authorize",
+        url: "https://orcid.org/oauth/authorize",
         params: {
-          client_id: process.env.GAKUNIN_CLIENT_ID, // クエリパラメータでclient_idを送信
-          scope: process.env.OSF_SCOPE || "osf.full_read osf.full_write", // 環境変数でスコープを管理
+          scope: "/authenticate",
           response_type: "code",
-          redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/callback/gakunin`, // 環境変数からリダイレクトURIを構築
+          redirect_uri: process.env.NEXTAUTH_URL + "/api/auth/callback/orcid",
         },
       },
-      token: {
-        url: "https://accounts.rdm.nii.ac.jp/oauth2/token",
-        async request(context) {
-          const body = new URLSearchParams({
-            client_id: process.env.GAKUNIN_CLIENT_ID, // 明示的に client_id を追加
-            client_secret: process.env.GAKUNIN_CLIENT_SECRET,
-            code: context.params.code, // 認可コード
-            grant_type: "authorization_code",
-            redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/callback/gakunin`,
-          });
-
-          const res = await fetch("https://accounts.rdm.nii.ac.jp/oauth2/token", {
-            method: "POST",
+      token: "https://orcid.org/oauth/token",
+      userinfo: {
+        url: "https://pub.orcid.org/v3.0/[ORCID]",
+        async request({ tokens }) {
+          console.log({ tokens })
+          const res = await fetch(`https://pub.orcid.org/v3.0/${tokens.orcid}`, {
             headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
+              Authorization: `Bearer ${tokens.access_token}`,
+              Accept: "application/json",
             },
-            body,
           });
-
-          const json = await res.json(); // Parse the response body once
-
-          if (!res.ok) {
-            throw new Error(`Token request failed: ${res.statusText}`);
-          }
-
-          return {
-            tokens: json
-          }
-        }
+          return await res.json();
+        },
       },
-      userinfo: "https://api.rdm.nii.ac.jp/v2/users/me/",
       profile(profile) {
-        if (!profile.data || !profile.data.attributes) {
-          throw new Error("Invalid user profile structure");
-        }
-
-        const user = {
-          id: profile.data.id || "unknown", // Handle missing ID gracefully
-          name: profile.data.attributes.full_name || "No Name",
-          email: profile.data.attributes.email || "No Email",
+        console.log({ profile })
+        return {
+          id: profile["orcid-identifier"].path, // ORCID の ID を取得
+          name: profile.person?.name?.["given-names"]?.value + " " + profile.person?.name?.["family-name"]?.value,
+          email: profile.person?.emails?.email?.[0]?.email,
         };
-
-        return user
       },
     },
   ],
   callbacks: {
     async session({ session, token }) {
-      // トークンからセッションに必要な情報を追加
       session.accessToken = token.accessToken;
-      session.user = {
-        ...session.user,
-        id: token.id, // トークンのIDをセッションのユーザーに追加
-      };
+      session.user.id = token.orcid; // ORCID ID をセッションに追加
       return session;
     },
-
-    async jwt({ token, account, user }) {
+    async jwt({ token, account }) {
       if (account) {
         token.accessToken = account.access_token;
-        token.refreshToken = account.refresh_token; // 必要であれば
-      }
-      if (user) {
-        token.id = user.id; // プロファイルからユーザーIDをトークンに保存
+        token.orcid = account.orcid;
       }
       return token;
     },

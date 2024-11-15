@@ -8,13 +8,11 @@ export default function MyData() {
       user: {
         id: string;
         name?: string | null;
-        email?: string | null;
       };
       accessToken: string;
     } | null;
   };
 
-  /*
   const fetchData = async () => {
     if (session && session.user) {
       // サーバー側のエンドポイント経由でデータを取得
@@ -23,16 +21,17 @@ export default function MyData() {
       console.log(data); // ユーザーデータを確認
     }
   };
-  */
 
   return (
     <div>
+      <button onClick={fetchData}>Get My ORCID Data</button>
+
       {!session ? (
-        <button onClick={() => signIn("gakunin")}>Sign in</button>
+        <button onClick={() => signIn("orcid")}>Sign in</button>
       ) : (
         <>
           <p>Welcome, {session?.user?.name}</p>
-          <p>ID: {session?.user?.id}</p>
+          <p>ORCID: {session?.user?.id}</p>
           <p>Access Token: {session?.accessToken}</p>
           <button onClick={() => signOut()}>Sign out</button>
         </>
